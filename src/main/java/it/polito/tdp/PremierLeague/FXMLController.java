@@ -8,6 +8,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+
+import it.polito.tdp.PremierLeague.model.Adiacenza;
+import it.polito.tdp.PremierLeague.model.Match;
 import it.polito.tdp.PremierLeague.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -42,17 +45,28 @@ public class FXMLController {
     private ComboBox<Integer> cmbMese; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbM1"
-    private ComboBox<?> cmbM1; // Value injected by FXMLLoader
+    private ComboBox<Match> cmbM1; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbM2"
-    private ComboBox<?> cmbM2; // Value injected by FXMLLoader
+    private ComboBox<Match> cmbM2; // Value injected by FXMLLoader
 
     @FXML // fx:id="txtResult"
     private TextArea txtResult; // Value injected by FXMLLoader
 
     @FXML
     void doConnessioneMassima(ActionEvent event) {
+    	txtResult.clear();
+    	List<Adiacenza> maxConn= new ArrayList<>();
+    	maxConn.addAll(this.model.getConnessioneMax());
+    	if(maxConn.isEmpty()) {
+    		txtResult.setText("ERRORE");
+    		return;
+    	}
+    	txtResult.setText("Coppie con connessione massima: \n");
     	
+    	for(Adiacenza a: maxConn) {
+    		txtResult.appendText(a.getM1().toString()+" - "+a.getM2().toString()+" "+a.getPeso()+"\n");
+    	}
     }
 
     @FXML
@@ -78,14 +92,42 @@ public class FXMLController {
     		return;
     	}
     	
-    	//Mettere controllo sul mese
+    	
     	this.model.creaGrafo(minuti, mese);
     	txtResult.setText("Creato grafo con "+this.model.getNVertici()+" vertici e "+this.model.getNArchi()+" archi.\n");
+ 
+    	cmbM1.getItems().clear();
+    	cmbM2.getItems().clear();
+    	for(Match m: this.model.getVertici()) {
+    		cmbM1.getItems().add(m);
+    		cmbM2.getItems().add(m);
+    	}
     }
 
     @FXML
     void doCollegamento(ActionEvent event) {
+    	Match m1;
+    	Match m2;
+    	try {
+    		m1=cmbM1.getValue();
+    		m2=cmbM2.getValue();
+    	}catch(NullPointerException e) {
+    		txtResult.setText("Inserire un match di arrivo e uno di partenza dall'apposita box.\n");
+    		return;
+    	}
     	
+    	List<Match> percorso=new ArrayList<>();
+    	percorso.addAll(this.model.calcolaPercorso(m1, m2));
+    	if(percorso.isEmpty()) {
+    		txtResult.setText("ERRORE");
+    		return;
+    	}
+    	
+    	txtResult.clear();
+    	txtResult.setText("Il percorso con peso maggiore da "+m1.toString()+" a "+m2.toString()+" é: \n");
+    	for(Match m: percorso) {
+    		txtResult.appendText(m.toString()+"\n");
+    	}
     }
 
     @FXML // This method is called by the FXMLLoader when initialization is complete
