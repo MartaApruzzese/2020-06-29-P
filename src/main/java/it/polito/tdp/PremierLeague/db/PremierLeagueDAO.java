@@ -6,7 +6,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
 import it.polito.tdp.PremierLeague.model.Action;
+import it.polito.tdp.PremierLeague.model.Adiacenza;
 import it.polito.tdp.PremierLeague.model.Match;
 import it.polito.tdp.PremierLeague.model.Player;
 
@@ -78,6 +81,63 @@ public class PremierLeagueDAO {
 				
 				
 				result.add(match);
+
+			}
+			conn.close();
+			return result;
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	public List<Match> getVertici(int mese, Map<Integer,Match> idMap){
+		String sql="SELECT DISTINCT m.MatchID AS id "
+				+ "FROM matches m "
+				+ "WHERE MONTH(m.Date)=? ";
+		List<Match> result= new ArrayList<>();
+		Connection conn = DBConnect.getConnection();
+
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, mese);
+			ResultSet res = st.executeQuery();
+			while (res.next()) {
+
+				
+				result.add(idMap.get(res.getInt("id")));
+
+			}
+			conn.close();
+			return result;
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	public List<Adiacenza> getAdiacenze(int min, int mese, Map<Integer, Match> idMap){
+		String sql="SELECT m1.MatchID as id1, m2.MatchID as id2, COUNT(a1.PlayerID) as peso "
+				+ "FROM matches m1, matches m2, actions a1, actions a2 "
+				+ "WHERE m1.MatchID<m2.MatchID AND a1.MatchID=m1.MatchID AND a2.MatchID=m2.MatchID "
+				+ "AND MONTH(m1.Date)=? AND MONTH(m2.Date)=MONTH(m1.Date) "
+				+ "AND a1.PlayerID=a2.PlayerID AND a1.TimePlayed>? AND a2.TimePlayed>? "
+				+ "GROUP BY m1.MatchID, m2.MatchID ";
+		List<Adiacenza> result= new ArrayList<>();
+		Connection conn = DBConnect.getConnection();
+
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, mese);
+			st.setInt(2, min);
+			st.setInt(3, min);
+			ResultSet res = st.executeQuery();
+			while (res.next()) {
+
+				Adiacenza a= new Adiacenza(idMap.get(res.getInt("id1")), idMap.get(res.getInt("id2")), res.getDouble("peso"));
+				result.add(a);
 
 			}
 			conn.close();
